@@ -4,6 +4,7 @@ const fse = require('fs-extra');
 const path = require('path');
 const progress = require('progress-stream');
 const cliProgress = require('cli-progress');
+const out = require('output');
 
 const host = 'doc.lagout.org';
 const logfilePath = path.join(__dirname, 'skipped.log');
@@ -12,9 +13,10 @@ const whitelistExtensions = ['jpg', 'pdf', 'djvu', 'txt'];
 async function loadFile(url, contentLength) {
   if (!whitelistExtensions.some((ext) => url.endsWith(`.${ext}`))) {
     await fse.appendFile(logfilePath, `'${decodeURIComponent(url)}'\n`);
+    out.warn(`Skip resource from ${url}`);
     return;
   }
-  console.log('Loading....', url);
+  out.info(`Load resource from ${url}`);
   const currPath = path.join(__dirname, 'result', decodeURIComponent(new URL(url).pathname));
   await fse.ensureFile(currPath);
   const writer = fse.createWriteStream(currPath);
@@ -58,7 +60,6 @@ async function grabFilenames(url) {
 
 async function download(baseUrl, path) {
   const currentUrl = `${baseUrl}${path}`;
-  console.log(`Process ${currentUrl}`);
   await axios
     .head(currentUrl)
     .then(({ headers }) => {
@@ -67,7 +68,7 @@ async function download(baseUrl, path) {
         ? grabFilenames(currentUrl)
         : loadFile(currentUrl, parseInt(headers['content-length']));
     })
-    .catch((err) => console.error(`Resource loading ${baseUrl}${path} was failed.`, err));
+    .catch((err) => out.error(`Resource loading ${baseUrl}${path} was failed.`, err));
 }
 
 fse.ensureFile(logfilePath).then(() => download(`https://${host}/`, ''));
