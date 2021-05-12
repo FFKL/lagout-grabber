@@ -4,7 +4,8 @@ const fse = require('fs-extra');
 const path = require('path');
 const progress = require('progress-stream');
 const cliProgress = require('cli-progress');
-const out = require('output');
+const out = require('./output');
+const logger = require('./logger');
 
 const host = 'doc.lagout.org';
 const logfilePath = path.join(__dirname, 'skipped.log');
@@ -12,7 +13,7 @@ const whitelistExtensions = ['jpg', 'pdf', 'djvu', 'txt'];
 
 async function loadFile(url, contentLength) {
   if (!whitelistExtensions.some((ext) => url.endsWith(`.${ext}`))) {
-    await fse.appendFile(logfilePath, `'${decodeURIComponent(url)}'\n`);
+    logger.resourceSkipped('NotWhitelistedExtension', decodeURIComponent(url));
     out.warn(`Skip resource from ${url}`);
     return;
   }
@@ -25,7 +26,7 @@ async function loadFile(url, contentLength) {
     length: contentLength,
     time: 100,
   });
-  const bar = new cliProgress.SingleBar({}, cliProgress.Presets.shades_classic);
+  const bar = new cliProgress.SingleBar({}, cliProgress.Presets.legacy);
   bar.start(contentLength, 0);
   file.data
     .on('error', (error) => writer.destroy(error))
