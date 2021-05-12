@@ -2,20 +2,45 @@ const axios = require('axios');
 const cheerio = require('cheerio');
 const fse = require('fs-extra');
 const path = require('path');
+const progress = require('progress-stream');
+const cliProgress = require('cli-progress');
 
 const host = 'doc.lagout.org';
+const logfilePath = path.join(__dirname, 'skipped.log');
+const whitelistExtensions = ['jpg', 'pdf', 'djvu', 'txt'];
 
-async function loadFile(url) {
+async function loadFile(url, contentLength) {
+  if (!whitelistExtensions.some((ext) => url.endsWith(`.${ext}`))) {
+    await fse.appendFile(logfilePath, `'${decodeURIComponent(url)}'\n`);
+    return;
+  }
   console.log('Loading....', url);
-  const currPath = path.join(__dirname, 'result', new URL(url).pathname);
+  const currPath = path.join(__dirname, 'result', decodeURIComponent(new URL(url).pathname));
   await fse.ensureFile(currPath);
-  const writer = await fse.createWriteStream(currPath);
+  const writer = fse.createWriteStream(currPath);
   const file = await axios.get(url, { responseType: 'stream' });
-  file.data.on('error', (error) => writer.close(error)).pipe(writer);
+  const prog = progress({
+    length: contentLength,
+    time: 100,
+  });
+  const bar = new cliProgress.SingleBar({}, cliProgress.Presets.shades_classic);
+  bar.start(contentLength, 0);
+  file.data
+    .on('error', (error) => writer.destroy(error))
+    .pipe(prog)
+    .on('progress', ({ transferred }) => bar.update(transferred))
+    .pipe(writer);
 
   await new Promise((resolve, reject) => {
-    writer.on('finish', resolve);
-    writer.on('error', reject);
+    writer.on('finish', () => {
+      bar.stop();
+      resolve();
+    });
+    writer.on('error', (err) => {
+      file.destroy(err);
+      bar.stop();
+      reject(err);
+    });
   });
 }
 
@@ -36,9 +61,13 @@ async function download(baseUrl, path) {
   console.log(`Process ${currentUrl}`);
   await axios
     .head(currentUrl)
-    .then(({ headers }) => headers['content-type'].startsWith('text/html'))
-    .then((isHtml) => (isHtml ? grabFilenames(currentUrl) : loadFile(currentUrl)))
+    .then(({ headers }) => {
+      const isHtml = headers['content-type'].startsWith('text/html');
+      return isHtml
+        ? grabFilenames(currentUrl)
+        : loadFile(currentUrl, parseInt(headers['content-length']));
+    })
     .catch((err) => console.error(`Resource loading ${baseUrl}${path} was failed.`, err));
 }
 
-download(`https://${host}/`, '').then(() => 'Start loading...');
+fse.ensureFile(logfilePath).then(() => download(`https://${host}/`, ''));
