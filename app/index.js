@@ -52,30 +52,3 @@ const crawler = new Crawler({
 });
 
 crawler.crawl(new URL(baseUrl));
-
-// async function grabFilenames(url) {
-//   const { data } = await axios.get(url);
-//   const $ = cheerio.load(data);
-//   const linksToVisit = $('pre a')
-//     .toArray()
-//     .map((node) => $(node).attr('href'))
-//     .filter((link) => !link.startsWith('..'));
-//   for (const link of linksToVisit) {
-//     await download(url, link);
-//   }
-// }
-
-// async function download(baseUrl, path) {
-//   const currentUrl = `${baseUrl}${path}`;
-//   await axios
-//     .head(currentUrl)
-//     .then(({ headers }) => {
-//       const isHtml = headers['content-type'].startsWith('text/html');
-//       return isHtml
-//         ? grabFilenames(currentUrl)
-//         : loadFile(currentUrl, parseInt(headers['content-length']));
-//     })
-//     .catch((err) => out.error(`Resource loading ${baseUrl}${path} was failed.`, err));
-// }
-
-// download(`https://${host}/`, '');
