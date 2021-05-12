@@ -18,7 +18,7 @@ async function loadFile(url, contentLength) {
     return;
   }
   out.info(`Load resource from ${decodeURIComponent(url.pathname)}`);
-  const currPath = path.join(__dirname, 'result', decodeURIComponent(url.pathname));
+  const currPath = path.join(process.cwd(), 'result', decodeURIComponent(url.pathname));
   await fse.ensureFile(currPath);
   const writer = fse.createWriteStream(currPath);
   const file = await axios.get(url.toString(), { responseType: 'stream' });

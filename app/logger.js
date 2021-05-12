@@ -19,7 +19,7 @@ module.exports = {
 };
 
 function initLogFile(filename) {
-  const filePath = path.resolve(__dirname, config.logsDir, filename);
+  const filePath = path.resolve(process.cwd(), config.logsDir, filename);
   fse.ensureFileSync(filePath);
   return fse.createWriteStream(filePath, { flags: 'a' });
 }
