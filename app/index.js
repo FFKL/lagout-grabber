@@ -11,6 +11,8 @@ const Crawler = require('./crawler');
 const config = require('./config');
 const { baseUrl } = require('./config');
 
+const argv = require('./args');
+
 async function loadFile(url, contentLength) {
   if (!config.fileExtensionsWhitelist.some((ext) => url.toString().endsWith(`.${ext}`))) {
     logger.resourceSkipped('NotWhitelistedExtension', decodeURIComponent(url.pathname));
