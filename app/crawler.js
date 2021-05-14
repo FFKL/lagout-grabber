@@ -1,59 +1,66 @@
 const axios = require('axios');
 const cheerio = require('cheerio');
-const out = require('./output');
 
-module.exports = class Crawler {
-  constructor({ pathsWhitelist = [], pathsBlacklist = [], onFoundFile = () => {} }) {
-    this.pathsBlacklist = pathsBlacklist;
-    this.pathsWhitelist = pathsWhitelist;
-    this.onFoundFile = onFoundFile;
+class Crawler {
+  constructor(out, config, handlers) {
+    this._out = out;
+    this._config = config;
+    this._handlers = handlers;
   }
 
-  async crawl(startUrl) {
-    await this.nextLink(startUrl);
+  async crawl() {
+    await this._nextLink(this._config.baseUrl);
   }
 
-  async nextLink(url) {
+  async _nextLink(url) {
     const { headers } = await axios.head(url.toString());
     const isHtml = headers['content-type'].startsWith('text/html');
-    const isCrawlAllowed = this.checkAllowedPath(url);
+    const isCrawlAllowed = this._checkAllowedPath(url);
     if (!isCrawlAllowed) {
       return;
     }
 
     if (isHtml) {
-      await this.nextDir(url).catch((err) => {
-        out.error(`Resource loading ${url.toString()} was failed. ${err.toString()}`);
+      await this._nextDir(url).catch((err) => {
+        this._out.error(`Resource loading ${url.toString()} was failed. ${err.toString()}`);
       });
     } else {
-      await this.onFoundFile(url, parseInt(headers['content-length']));
+      await this._handlers.onFoundFile(url, parseInt(headers['content-length']));
     }
   }
 
-  async nextDir(url) {
+  async _nextDir(url) {
     const { data } = await axios.get(url.toString());
-    const linksToVisit = this.collectLinks(data);
+    const linksToVisit = this._collectLinks(data);
     for (const link of linksToVisit) {
-      await this.nextLink(new URL(link, url));
+      await this._nextLink(new URL(link, url));
     }
   }
 
-  collectLinks(html) {
+  _collectLinks(html) {
     const $ = cheerio.load(html);
 
-    return $('pre a')
+    return $(this._config.linkSelector)
       .toArray()
       .map((node) => $(node).attr('href'))
       .filter((link) => !link.startsWith('..'));
   }
 
-  checkAllowedPath(url) {
-    if (this.pathsBlacklist.length > 0 && this.pathsBlacklist.includes(url.pathname)) {
+  _checkAllowedPath(url) {
+    const { pathsBlacklist: blacklist, pathsWhitelist: whitelist } = this._config;
+    if (blacklist.length > 0 && blacklist.includes(url.pathname)) {
       return false;
     }
-    if (this.pathsWhitelist.length > 0) {
-      return this.pathsWhitelist.includes(url.pathname);
+    if (whitelist.length > 0) {
+      return whitelist.includes(url.pathname);
     }
     return true;
   }
-};
+}
+
+function createCrawler(out, config, handlers) {
+  return new Crawler(out, config, handlers);
+}
+
+module.exports.Crawler = Crawler;
+module.exports.createCrawler = createCrawler;
