@@ -24,13 +24,15 @@ class FileLoader {
     await this._uploadFile(url, resultPath, contentLength);
   }
 
-  _uploadFile(url, path, contentLength) {
+  _uploadFile(url, filepath, contentLength) {
+    const tempFilepath = `${filepath}.download`;
+
     return fse
-      .ensureFile(path)
+      .ensureFile(tempFilepath)
       .then(() => axios.get(url.toString(), { responseType: 'stream' }))
       .then((file) => {
         const bar = this._createProgressBar(contentLength);
-        const writer = fse.createWriteStream(path);
+        const writer = fse.createWriteStream(tempFilepath);
         file.data
           .on('error', (error) => writer.destroy(error))
           .pipe(progress({ length: contentLength, time: 100 }))
@@ -43,7 +45,8 @@ class FileLoader {
           });
 
         return new Promise((resolve, reject) => writer.on('finish', resolve).on('error', reject));
-      });
+      })
+      .then(() => fse.rename(tempFilepath, filepath));
   }
 
   _checkAllowedFileType(url) {
