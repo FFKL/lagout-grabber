@@ -9,7 +9,7 @@ class Crawler {
   }
 
   async crawl() {
-    await this._nextLink(this._config.baseUrl);
+    await this._nextLink(new URL(this._config.baseUrl));
   }
 
   async _nextLink(url) {
