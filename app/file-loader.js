@@ -16,21 +16,25 @@ class FileLoader {
   async load(url, contentLength) {
     if (!this._checkAllowedFileType(url)) {
       this._logger.resourceSkipped('NotWhitelistedExtension', decodeURIComponent(url.pathname));
-      this._out.warn(`Skip resource from ${decodeURIComponent(url.pathname)}`);
+      this._out.warn(`Skip: Resource loading is not allowed ${decodeURIComponent(url.pathname)}`);
       return;
     }
-    this._out.info(`Load resource from ${decodeURIComponent(url.pathname)}`);
     const resultPath = path.join(process.cwd(), 'result', decodeURIComponent(url.pathname));
     await this._uploadFile(url, resultPath, contentLength);
   }
 
-  _uploadFile(url, filepath, contentLength) {
+  async _uploadFile(url, filepath, contentLength) {
     const tempFilepath = `${filepath}.download`;
+    if (!this._config.force && (await this._fileExists(filepath))) {
+      this._out.warn(`Skip: Resource already exists ${decodeURIComponent(url.pathname)}`);
+      return;
+    }
 
     return fse
       .ensureFile(tempFilepath)
       .then(() => axios.get(url.toString(), { responseType: 'stream' }))
       .then((file) => {
+        this._out.info(`Load resource from ${decodeURIComponent(url.pathname)}`);
         const bar = this._createProgressBar(contentLength);
         const writer = fse.createWriteStream(tempFilepath);
         file.data
@@ -47,6 +51,18 @@ class FileLoader {
         return new Promise((resolve, reject) => writer.on('finish', resolve).on('error', reject));
       })
       .then(() => fse.rename(tempFilepath, filepath));
+  }
+
+  _fileExists(filepath) {
+    return fse
+      .access(filepath, fse.constants.F_OK)
+      .then(() => true)
+      .catch((err) => {
+        if (err.code === 'ENOENT') {
+          return false;
+        }
+        throw err;
+      });
   }
 
   _checkAllowedFileType(url) {
