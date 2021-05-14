@@ -19,7 +19,7 @@ module.exports = {
   pathsWhitelist: [],
   pathsBlacklist: [],
   logsDir: './logs/',
-  outputDir: './content/',
+  outputDir: './result/',
   baseUrl: 'https://doc.lagout.org',
   linkSelector: 'pre a[href]',
 };

@@ -19,7 +19,8 @@ class FileLoader {
       this._out.warn(`Skip: Resource loading is not allowed ${decodeURIComponent(url.pathname)}`);
       return;
     }
-    const resultPath = path.join(process.cwd(), 'result', decodeURIComponent(url.pathname));
+    const rootDir = path.resolve(process.cwd(), this._config.outputDir);
+    const resultPath = path.join(rootDir, decodeURIComponent(url.pathname));
     await this._uploadFile(url, resultPath, contentLength);
   }
 
