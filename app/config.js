@@ -13,7 +13,7 @@ module.exports = {
     'docx',
   ],
   force: false,
-  startFrom: '/',
+  rootPathname: '/',
   writeLogs: true,
   fileExtensionsBlacklist: [],
   pathsWhitelist: [],

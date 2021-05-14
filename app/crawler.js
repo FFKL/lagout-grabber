@@ -9,7 +9,7 @@ class Crawler {
   }
 
   async crawl() {
-    await this._nextLink(new URL(this._config.baseUrl));
+    await this._nextLink(new URL(this._config.rootPathname, this._config.baseUrl));
   }
 
   async _nextLink(url) {
@@ -48,11 +48,11 @@ class Crawler {
 
   _checkAllowedPath(url) {
     const { pathsBlacklist: blacklist, pathsWhitelist: whitelist } = this._config;
-    if (blacklist.length > 0 && blacklist.includes(url.pathname)) {
+    if (blacklist.length > 0 && blacklist.includes(decodeURIComponent(url.pathname))) {
       return false;
     }
     if (whitelist.length > 0) {
-      return whitelist.includes(url.pathname);
+      return whitelist.includes(decodeURIComponent(url.pathname));
     }
     return true;
   }
