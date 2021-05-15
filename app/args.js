@@ -41,4 +41,5 @@ module.exports = require('yargs/yargs')(process.argv.slice(2))
   .describe('base-url', 'Url to start crawling')
   .string('link-selector')
   .default('link-selector', config.linkSelector)
-  .describe('link-selector', 'CSS selector for collecting links on a page').argv;
+  .describe('link-selector', 'CSS selector for collecting links on a page')
+  .config().argv;
