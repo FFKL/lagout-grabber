@@ -1,25 +1,33 @@
-const path = require('path');
-const fse = require('fs-extra');
-const config = require('./config');
+class Logger {
+  constructor(transports = []) {
+    this._transports = transports;
+  }
 
-const skippedStream = initLogFile('skipped.log');
-const errorStream = initLogFile('error.log');
+  success(message) {
+    this._transports.forEach((t) => t.success(message));
+  }
 
-module.exports = {
-  resourceSkipped(reason, message) {
-    skippedStream.write(`${new Date().toISOString()} - ${reason} - ${message}\n`);
-  },
+  info(message) {
+    this._transports.forEach((t) => t.info(message));
+  }
+
+  warn(message) {
+    this._transports.forEach((t) => t.warn(message));
+  }
+
   error(message) {
-    errorStream.write(`${new Date().toISOString()} - ${message}\n`);
-  },
-  end() {
-    skippedStream.end();
-    errorStream.end();
-  },
-};
-
-function initLogFile(filename) {
-  const filePath = path.resolve(process.cwd(), config.logsDir, filename);
-  fse.ensureFileSync(filePath);
-  return fse.createWriteStream(filePath, { flags: 'a' });
+    this._transports.forEach((t) => t.error(message));
+  }
 }
+
+function createLogger(config, fsTransportFactory, consoleTransportFactory) {
+  const transports = [consoleTransportFactory(config)];
+  if (config.writeLogs) {
+    transports.push(fsTransportFactory(config));
+  }
+
+  return new Logger(transports);
+}
+
+module.exports.Logger = Logger;
+module.exports.createLogger = createLogger;

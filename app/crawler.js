@@ -2,8 +2,8 @@ const axios = require('axios');
 const cheerio = require('cheerio');
 
 class Crawler {
-  constructor(out, config, handlers) {
-    this._out = out;
+  constructor(logger, config, handlers) {
+    this._logger = logger;
     this._config = config;
     this._handlers = handlers;
   }
@@ -22,7 +22,7 @@ class Crawler {
 
     if (isHtml) {
       await this._nextDir(url).catch((err) => {
-        this._out.error(`Resource loading ${url.toString()} was failed. ${err.toString()}`);
+        this._logger.error(`Resource loading ${url.toString()} was failed. ${err.toString()}`);
       });
     } else {
       await this._handlers.onFoundFile(url, parseInt(headers['content-length']));
@@ -58,8 +58,8 @@ class Crawler {
   }
 }
 
-function createCrawler(out, config, handlers) {
-  return new Crawler(out, config, handlers);
+function createCrawler(logger, config, handlers) {
+  return new Crawler(logger, config, handlers);
 }
 
 module.exports.Crawler = Crawler;

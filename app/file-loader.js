@@ -7,16 +7,14 @@ const cliProgress = require('cli-progress');
 const { checkUrlExtension } = require('./utils');
 
 class FileLoader {
-  constructor(logger, out, config) {
+  constructor(logger, config) {
     this._logger = logger;
-    this._out = out;
     this._config = config;
   }
 
   async load(url, contentLength) {
     if (!this._checkAllowedFileType(url)) {
-      this._logger.resourceSkipped('NotWhitelistedExtension', decodeURIComponent(url.pathname));
-      this._out.warn(`Skip: Resource loading is not allowed ${decodeURIComponent(url.pathname)}`);
+      this._logger.warn(`Skip: Resource loading is not allowed ${decodeURIComponent(url.pathname)}`);
       return;
     }
     const rootDir = path.resolve(process.cwd(), this._config.outputDir);
@@ -27,7 +25,7 @@ class FileLoader {
   async _uploadFile(url, filepath, contentLength) {
     const tempFilepath = `${filepath}.download`;
     if (!this._config.force && (await this._fileExists(filepath))) {
-      this._out.warn(`Skip: Resource already exists ${decodeURIComponent(url.pathname)}`);
+      this._logger.warn(`Skip: Resource already exists ${decodeURIComponent(url.pathname)}`);
       return;
     }
 
@@ -35,7 +33,7 @@ class FileLoader {
       .ensureFile(tempFilepath)
       .then(() => axios.get(url.toString(), { responseType: 'stream' }))
       .then((file) => {
-        this._out.info(`Load resource from ${decodeURIComponent(url.pathname)}`);
+        this._logger.info(`Load resource from ${decodeURIComponent(url.pathname)}`);
         const bar = this._createProgressBar(contentLength);
         const writer = fse.createWriteStream(tempFilepath);
         file.data
@@ -84,8 +82,8 @@ class FileLoader {
   }
 }
 
-function createFileLoader(logger, out, config) {
-  return new FileLoader(logger, out, config);
+function createFileLoader(logger, config) {
+  return new FileLoader(logger, config);
 }
 
 module.exports.createFileLoader = createFileLoader;
