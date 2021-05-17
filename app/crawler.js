@@ -22,10 +22,12 @@ class Crawler {
 
     if (isHtml) {
       await this._nextDir(url).catch((err) => {
-        this._logger.error(`Resource loading ${url.toString()} was failed. ${err.toString()}`);
+        this._logger.error(`Resource loading ${url.toString()} was failed. ${err}`);
       });
     } else {
-      await this._handlers.onFoundFile(url, parseInt(headers['content-length']));
+      await this._handlers.onFoundFile(url, parseInt(headers['content-length'])).catch((err) => {
+        this._logger.error(`File loading ${url.toString()} was failed. ${err}`);
+      });
     }
   }
 
