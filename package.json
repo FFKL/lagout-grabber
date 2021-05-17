@@ -5,8 +5,8 @@
   "main": "app/index.js",
   "scripts": {
     "start": "node ./app/index.js",
-    "build:windows-x64": "nexe ./app/index.js -t windows-x64-12.16.3 -o ./build/win-x64-grabber.exe",
-    "build:linux-x64": "nexe ./app/index.js -t linux-x64-12.16.2 -o ./build/linux-x64-grabber",
+    "build:windows-x64": "nexe ./app/index.js -t windows-x64-12.16.3 -o ./build/win-x64-grabber.exe -r ./node_modules/yargs/",
+    "build:linux-x64": "nexe ./app/index.js -t linux-x64-12.16.2 -o ./build/linux-x64-grabber -r ./node_modules/yargs/",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
